@@ -1,2 +1,9 @@
 /.idea/
 /Terraform-Up-and-Running.iml
+
+# Installed terraform providers etc.
+**/.terraform/*
+
+# State files
+*.tfstate
+*.tfstate.*

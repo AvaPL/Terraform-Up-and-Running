@@ -16,5 +16,19 @@ provider "azurerm" {
 # Configure example resource group
 resource "azurerm_resource_group" "example" {
   name     = "example-resource-group"
-  location = "West Europe"
+  location = "UAE North"
+}
+
+resource "azurerm_linux_virtual_machine" "example" {
+  admin_username        = "root"
+  location              = azurerm_resource_group.example.location
+  name                  = "example-machine"
+  network_interface_ids = [] // TODO: Add network interface
+  resource_group_name   = azurerm_resource_group.example.name
+  size                  = "B1ls"
+  os_disk {
+    caching              = "None"
+    storage_account_type = "Standard_LRS"
+  }
+  // TODO: Add a script that starts a web server
 }
