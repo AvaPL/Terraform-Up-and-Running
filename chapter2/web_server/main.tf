@@ -56,7 +56,7 @@ resource "azurerm_linux_virtual_machine" "example" {
     version   = "latest"
   }
 
-  custom_data = filebase64("start_busybox.sh") # Base64 encoded startup script
+  custom_data = filebase64("start_web_server.sh") # Base64 encoded startup script
 }
 
 # Configure network interface
