@@ -17,7 +17,7 @@ provider "azurerm" {
   features {}
 }
 
-# Configure example resource group
+# Configure a resource group
 #
 # All Azure resources have to be part of a resource group.
 resource "azurerm_resource_group" "example" {
@@ -25,7 +25,7 @@ resource "azurerm_resource_group" "example" {
   location = "UAE North"
 }
 
-# Configure Azure VM
+# Configure an Azure VM
 resource "azurerm_linux_virtual_machine" "example" {
   admin_username                  = "exampleadmin"
   # Use either interactive prompt or TF_VAR_<name> environment variable
@@ -59,7 +59,7 @@ resource "azurerm_linux_virtual_machine" "example" {
   custom_data = filebase64("start_web_server.sh") # Base64 encoded startup script
 }
 
-# Configure network interface
+# Configure a network interface
 resource "azurerm_network_interface" "example" {
   location            = azurerm_resource_group.example.location
   name                = "example-network-interface"
@@ -73,7 +73,7 @@ resource "azurerm_network_interface" "example" {
   }
 }
 
-# Configure subnet
+# Configure a subnet
 resource "azurerm_subnet" "example" {
   name                 = "example-subnet"
   resource_group_name  = azurerm_resource_group.example.name
@@ -81,7 +81,7 @@ resource "azurerm_subnet" "example" {
   address_prefixes     = ["10.0.0.0/24"] # Occupied part of the address space (10.0.0.0 - 10.0.0.255)
 }
 
-# Configure virtual network
+# Configure a virtual network
 resource "azurerm_virtual_network" "example" {
   address_space       = ["10.0.0.0/16"] # Address spaces available for subnets (10.0.0.0 - 10.0.255.255)
   location            = azurerm_resource_group.example.location
@@ -89,7 +89,7 @@ resource "azurerm_virtual_network" "example" {
   resource_group_name = azurerm_resource_group.example.name
 }
 
-# Configure public IP
+# Configure a public IP
 resource "azurerm_public_ip" "example" {
   allocation_method   = "Dynamic"
   location            = azurerm_resource_group.example.location
@@ -97,7 +97,7 @@ resource "azurerm_public_ip" "example" {
   resource_group_name = azurerm_resource_group.example.name
 }
 
-# Configure network security group
+# Configure a network security group
 resource "azurerm_network_security_group" "example" {
   location            = azurerm_resource_group.example.location
   name                = "example-network-security-group"
@@ -116,14 +116,14 @@ resource "azurerm_network_security_group" "example" {
   }
 }
 
-# Link subnet to security group
+# Link the subnet to the security group
 resource "azurerm_subnet_network_security_group_association" "example" {
   network_security_group_id = azurerm_network_security_group.example.id
   subnet_id                 = azurerm_subnet.example.id
 }
 
-# Output variables printed to console after apply
+# Output variables printed to the console after apply
 output "vm_public_ip" {
-  description = "Public IP address of provisioned VM"
+  description = "Public IP address of the provisioned VM"
   value = azurerm_linux_virtual_machine.example.public_ip_address
 }

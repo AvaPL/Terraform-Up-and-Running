@@ -17,7 +17,7 @@ provider "azurerm" {
   features {}
 }
 
-# Configure example resource group
+# Configure a resource group
 #
 # All Azure resources have to be part of a resource group.
 resource "azurerm_resource_group" "example" {
@@ -37,13 +37,15 @@ resource "azurerm_linux_virtual_machine_scale_set" "example" {
   sku                             = "Standard_B1ls" # Smallest VM for testing purposes
 
   network_interface {
-    name = "example-network-interface"
+    name    = "example-network-interface"
+    primary = true
 
     ip_configuration {
-      name                          = "internal"
-      private_ip_address_allocation = "Dynamic"
-      subnet_id                     = azurerm_subnet.example.id
-      // TODO: Add load balancer IP pool
+      name                                   = "internal"
+      subnet_id                              = azurerm_subnet.example.id
+      load_balancer_backend_address_pool_ids = [
+        azurerm_lb_backend_address_pool.example.id
+      ]
     }
   }
 
@@ -64,7 +66,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "example" {
   custom_data = filebase64("start_web_server.sh") # Base64 encoded startup script
 }
 
-# Configure subnet
+# Configure a subnet
 resource "azurerm_subnet" "example" {
   name                 = "example-subnet"
   resource_group_name  = azurerm_resource_group.example.name
@@ -72,7 +74,7 @@ resource "azurerm_subnet" "example" {
   address_prefixes     = ["10.0.0.0/24"] # Occupied part of the address space (10.0.0.0 - 10.0.0.255)
 }
 
-# Configure virtual network
+# Configure a virtual network
 resource "azurerm_virtual_network" "example" {
   address_space       = ["10.0.0.0/16"] # Address spaces available for subnets (10.0.0.0 - 10.0.255.255)
   location            = azurerm_resource_group.example.location
@@ -80,4 +82,54 @@ resource "azurerm_virtual_network" "example" {
   resource_group_name = azurerm_resource_group.example.name
 }
 
-// TODO: Add load balancer
+# Configure a load balancer
+resource "azurerm_lb" "example" {
+  location            = azurerm_resource_group.example.location
+  name                = "example-lb"
+  resource_group_name = azurerm_resource_group.example.name
+
+  frontend_ip_configuration {
+    name                 = var.frontend_ip_configuration_name
+    public_ip_address_id = azurerm_public_ip.example.id
+  }
+}
+
+# Configure a public IP
+resource "azurerm_public_ip" "example" {
+  allocation_method   = "Dynamic"
+  location            = azurerm_resource_group.example.location
+  name                = "example-public-ip"
+  resource_group_name = azurerm_resource_group.example.name
+}
+
+# Configure a backend address pool
+#
+# This pool manages IPs that will be accessed by the load balancer.
+resource "azurerm_lb_backend_address_pool" "example" {
+  loadbalancer_id = azurerm_lb.example.id
+  name            = "example-backend-address-pool"
+}
+
+# Configure a load balancer rule
+#
+# This rule tells which ports should be used on load balancer and VMs.
+resource "azurerm_lb_rule" "example" {
+  backend_port                   = 8080 # Port of application on the VM
+  frontend_ip_configuration_name = var.frontend_ip_configuration_name
+  frontend_port                  = 80 # Port on which load balancer will receive requests
+  loadbalancer_id                = azurerm_lb.example.id
+  name                           = "example-lb-rule"
+  protocol                       = "Tcp"
+  backend_address_pool_ids       = [
+    azurerm_lb_backend_address_pool.example.id
+  ]
+}
+
+# Output variables printed to the console after apply
+output "lb_public_ip" {
+  description = "Public IP address of the load balancer"
+  value       = azurerm_public_ip.example.ip_address
+}
+
+// TODO: Autorepair (healthchecks)
+// TODO: Autoscaling
