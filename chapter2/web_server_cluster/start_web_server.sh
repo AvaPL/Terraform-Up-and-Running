@@ -1,4 +1,4 @@
 #!/bin/bash
 
-echo "Hello, World" > index.html
+echo "Hello, World from `hostname`" > index.html
 nohup busybox httpd -f -p 8080 &

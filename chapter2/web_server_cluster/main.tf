@@ -1,6 +1,6 @@
 # The example below contains the bare minimum to provision a cluster of web
-# servers on Azure. Similarly as in single web server case, the config is
-# more verbose than the equivalent on AWS.
+# servers on Azure with self-repair and autoscaling. Similarly as in single
+# web server case, the config is more verbose than the equivalent on AWS.
 
 # Azure Provider source and version being used
 terraform {
@@ -64,6 +64,15 @@ resource "azurerm_linux_virtual_machine_scale_set" "example" {
   }
 
   custom_data = filebase64("start_web_server.sh") # Base64 encoded startup script
+
+  # For some reason this currently does not enable self-healing
+  # Question: https://docs.microsoft.com/en-us/answers/questions/815029/cannot-enable-autorepair-for-vm-scale-set.html
+  automatic_instance_repair {
+    enabled = true
+    grace_period = "PT10M"
+  }
+
+  health_probe_id = azurerm_lb_probe.example.id # Healthcheck used to determine if instance is healthy
 }
 
 # Configure a subnet
@@ -123,6 +132,19 @@ resource "azurerm_lb_rule" "example" {
   backend_address_pool_ids       = [
     azurerm_lb_backend_address_pool.example.id
   ]
+  probe_id = azurerm_lb_probe.example.id # Healthcheck used to determine if instance is healthy
+}
+
+# Configure a healthcheck probe
+#
+# This section is optional and in fact not needed to run the cluster.
+# Its purpose is to provide a self-healing mechanism.
+resource "azurerm_lb_probe" "example" {
+  loadbalancer_id     = azurerm_lb.example.id
+  name                = "example-lb-probe"
+  port                = 8080
+  protocol            = "Http"
+  request_path        = "/"
 }
 
 # Output variables printed to the console after apply
@@ -131,5 +153,4 @@ output "lb_public_ip" {
   value       = azurerm_public_ip.example.ip_address
 }
 
-// TODO: Autorepair (healthchecks)
 // TODO: Autoscaling
