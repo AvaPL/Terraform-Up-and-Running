@@ -7,7 +7,7 @@ terraform {
     }
   }
   backend "azurerm" {
-    resource_group_name  = "example-resource-group"
+    resource_group_name  = "storage-resource-group"
     storage_account_name = "example241574"
     container_name       = "example-storage-container"
     key                  = "global/storage/terraform.tfstate"
@@ -22,8 +22,8 @@ provider "azurerm" {
 # Configure a resource group
 #
 # All Azure resources have to be part of a resource group.
-resource "azurerm_resource_group" "example" {
-  name     = "example-resource-group"
+resource "azurerm_resource_group" "storage" {
+  name     = "storage-resource-group"
   location = "UAE North"
 }
 
@@ -33,9 +33,9 @@ resource "azurerm_resource_group" "example" {
 resource "azurerm_storage_account" "example" {
   account_replication_type = "LRS" # Locally redundant storage with 3 copies in local datacenter
   account_tier             = "Standard" # Lowest account tier
-  location                 = azurerm_resource_group.example.location
+  location                 = azurerm_resource_group.storage.location
   name                     = "example241574"
-  resource_group_name      = azurerm_resource_group.example.name
+  resource_group_name      = azurerm_resource_group.storage.name
 
   blob_properties {
     versioning_enabled = true # Keep history of states
@@ -54,14 +54,4 @@ resource "azurerm_storage_container" "example" {
   lifecycle {
     prevent_destroy = true # Prevent destroying via 'terraform destroy'
   }
-}
-
-output "primary_blob_endpoint" {
-  description = "Primary blob endpoint"
-  value = azurerm_storage_account.example.primary_blob_endpoint
-}
-
-output "storage_container_name" {
-  description = "Storage container name"
-  value = azurerm_storage_container.example.name
 }
