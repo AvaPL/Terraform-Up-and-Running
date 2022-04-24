@@ -10,7 +10,7 @@ terraform {
     resource_group_name  = "storage-resource-group"
     storage_account_name = "example241574"
     container_name       = "example-storage-container"
-    key                  = "stage/resource_group/terraform.tfstate"
+    key                  = "prod/resource_group/terraform.tfstate"
   }
 }
 
@@ -23,6 +23,6 @@ provider "azurerm" {
 #
 # All Azure resources have to be part of a resource group.
 resource "azurerm_resource_group" "example" {
-  name     = "stage-example-resource-group"
+  name     = "prod-example-resource-group"
   location = "UAE North"
 }

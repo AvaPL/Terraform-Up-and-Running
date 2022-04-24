@@ -10,7 +10,7 @@ terraform {
     resource_group_name  = "storage-resource-group"
     storage_account_name = "example241574"
     container_name       = "example-storage-container"
-    key                  = "stage/data_stores/mysql/terraform.tfstate"
+    key                  = "prod/data_stores/mysql/terraform.tfstate"
   }
 }
 
@@ -27,13 +27,13 @@ data "terraform_remote_state" "resource_group" {
     resource_group_name  = "storage-resource-group"
     storage_account_name = "example241574"
     container_name       = "example-storage-container"
-    key                  = "stage/resource_group/terraform.tfstate"
+    key                  = "prod/resource_group/terraform.tfstate"
   }
 }
 
 resource "azurerm_mysql_server" "example" {
   location                     = data.terraform_remote_state.resource_group.outputs.resource_group_location
-  name                         = "stage-example-mysql-server"
+  name                         = "prod-example-mysql-server"
   resource_group_name          = data.terraform_remote_state.resource_group.outputs.resource_group_name
   sku_name                     = "B_Gen5_1" # Basic, generation 5, 1 CPU
   version                      = "8.0"

@@ -3,7 +3,7 @@ provider "azurerm" {
 }
 
 locals {
-  environment = "stage"
+  environment = "prod"
 }
 
 module "web_server_cluster" {

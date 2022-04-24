@@ -1,26 +1,31 @@
 variable "storage_resource_group" {
   description = "Azure Storage resource group"
-  type = string
+  type        = string
 }
 
 variable "storage_account_name" {
   description = "Azure Storage account name"
-  type = string
+  type        = string
 }
 
 variable "storage_container_name" {
   description = "Azure Storage container name"
-  type = string
+  type        = string
 }
 
 variable "storage_resource_group_state_key" {
   description = "Azure Storage resource group state key"
-  type = string
+  type        = string
 }
 
 variable "storage_mysql_state_key" {
   description = "Azure Storage MySQL state key"
-  type = string
+  type        = string
+}
+
+variable "environment" {
+  description = "Environment"
+  type        = string
 }
 
 variable "vm_password" {

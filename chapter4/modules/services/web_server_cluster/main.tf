@@ -46,7 +46,7 @@ data "template_file" "start_web_server" {
 }
 
 locals {
-  frontend_ip_configuration_name = "example-frontend-ip"
+  frontend_ip_configuration_name = "${var.environment}-example-frontend-ip"
 }
 
 # Configure a VM scale set
@@ -56,16 +56,16 @@ resource "azurerm_linux_virtual_machine_scale_set" "example" {
   disable_password_authentication = false # Use password auth instead of SSH keys
   instances                       = 2 # Default number of instances
   location                        = data.terraform_remote_state.resource_group.outputs.resource_group_location
-  name                            = "example-linux-virtual-machine-scale-set"
+  name                            = "${var.environment}-example-linux-virtual-machine-scale-set"
   resource_group_name             = data.terraform_remote_state.resource_group.outputs.resource_group_name
   sku                             = "Standard_B1ls" # Smallest VM for testing purposes
 
   network_interface {
-    name    = "example-network-interface"
+    name    = "${var.environment}-example-network-interface"
     primary = true
 
     ip_configuration {
-      name                                   = "internal"
+      name                                   = "${var.environment}-internal"
       primary                                = true
       subnet_id                              = azurerm_subnet.example.id
       load_balancer_backend_address_pool_ids = [
@@ -108,7 +108,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "example" {
 
 # Configure a subnet
 resource "azurerm_subnet" "example" {
-  name                 = "example-subnet"
+  name                 = "${var.environment}-example-subnet"
   resource_group_name  = data.terraform_remote_state.resource_group.outputs.resource_group_name
   virtual_network_name = azurerm_virtual_network.example.name
   address_prefixes     = ["10.0.0.0/24"] # Occupied part of the address space (10.0.0.0 - 10.0.0.255)
@@ -118,14 +118,14 @@ resource "azurerm_subnet" "example" {
 resource "azurerm_virtual_network" "example" {
   address_space       = ["10.0.0.0/16"] # Address spaces available for subnets (10.0.0.0 - 10.0.255.255)
   location            = data.terraform_remote_state.resource_group.outputs.resource_group_location
-  name                = "example-virtual-network"
+  name                = "${var.environment}-example-virtual-network"
   resource_group_name = data.terraform_remote_state.resource_group.outputs.resource_group_name
 }
 
 # Configure a load balancer
 resource "azurerm_lb" "example" {
   location            = data.terraform_remote_state.resource_group.outputs.resource_group_location
-  name                = "example-lb"
+  name                = "${var.environment}-example-lb"
   resource_group_name = data.terraform_remote_state.resource_group.outputs.resource_group_name
 
   frontend_ip_configuration {
@@ -138,7 +138,7 @@ resource "azurerm_lb" "example" {
 resource "azurerm_public_ip" "example" {
   allocation_method   = "Dynamic"
   location            = data.terraform_remote_state.resource_group.outputs.resource_group_location
-  name                = "example-public-ip"
+  name                = "${var.environment}-example-public-ip"
   resource_group_name = data.terraform_remote_state.resource_group.outputs.resource_group_name
 }
 
@@ -147,7 +147,7 @@ resource "azurerm_public_ip" "example" {
 # This pool manages IPs that will be accessed by the load balancer.
 resource "azurerm_lb_backend_address_pool" "example" {
   loadbalancer_id = azurerm_lb.example.id
-  name            = "example-backend-address-pool"
+  name            = "${var.environment}-example-backend-address-pool"
 }
 
 # Configure a load balancer rule
@@ -158,7 +158,7 @@ resource "azurerm_lb_rule" "example" {
   frontend_ip_configuration_name = local.frontend_ip_configuration_name
   frontend_port                  = 80 # Port on which load balancer will receive requests
   loadbalancer_id                = azurerm_lb.example.id
-  name                           = "example-lb-rule"
+  name                           = "${var.environment}-example-lb-rule"
   protocol                       = "Tcp"
   backend_address_pool_ids       = [
     azurerm_lb_backend_address_pool.example.id
@@ -172,7 +172,7 @@ resource "azurerm_lb_rule" "example" {
 # Its purpose is to provide a self-healing mechanism.
 resource "azurerm_lb_probe" "example" {
   loadbalancer_id = azurerm_lb.example.id
-  name            = "example-lb-probe"
+  name            = "${var.environment}-example-lb-probe"
   port            = 8080
   protocol        = "Http"
   request_path    = "/"
@@ -186,12 +186,12 @@ resource "azurerm_lb_probe" "example" {
 # for n in {1..1000}; do curl http://<load balancer IP>; done
 resource "azurerm_monitor_autoscale_setting" "example" {
   location            = data.terraform_remote_state.resource_group.outputs.resource_group_location
-  name                = "example-monitor-autoscale-setting"
+  name                = "${var.environment}-example-monitor-autoscale-setting"
   resource_group_name = data.terraform_remote_state.resource_group.outputs.resource_group_name
   target_resource_id  = azurerm_linux_virtual_machine_scale_set.example.id
 
   profile {
-    name = "default"
+    name = "${var.environment}-default"
 
     capacity {
       default = 2
