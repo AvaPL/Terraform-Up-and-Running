@@ -23,6 +23,10 @@ provider "azurerm" {
   features {}
 }
 
+locals {
+  frontend_ip_configuration_name = "example-frontend-ip"
+}
+
 # Resource group remote state
 data "terraform_remote_state" "resource_group" {
   backend = "azurerm"
@@ -136,7 +140,7 @@ resource "azurerm_lb" "example" {
   resource_group_name = data.terraform_remote_state.resource_group.outputs.resource_group_name
 
   frontend_ip_configuration {
-    name                 = var.frontend_ip_configuration_name
+    name                 = local.frontend_ip_configuration_name
     public_ip_address_id = azurerm_public_ip.example.id
   }
 }
@@ -162,7 +166,7 @@ resource "azurerm_lb_backend_address_pool" "example" {
 # This rule tells which ports should be used on load balancer and VMs.
 resource "azurerm_lb_rule" "example" {
   backend_port                   = 8080 # Port of application on the VM
-  frontend_ip_configuration_name = var.frontend_ip_configuration_name
+  frontend_ip_configuration_name = local.frontend_ip_configuration_name
   frontend_port                  = 80 # Port on which load balancer will receive requests
   loadbalancer_id                = azurerm_lb.example.id
   name                           = "example-lb-rule"

@@ -12,21 +12,41 @@ terraform {
   }
 }
 
-# Configure the Microsoft Azure Provider
-provider "azurerm" {
-  features {}
+# Resource group remote state
+data "terraform_remote_state" "resource_group" {
+  backend = "azurerm"
+
+  config = {
+    resource_group_name  = var.storage_resource_group
+    storage_account_name = var.storage_account_name
+    container_name       = var.storage_container_name
+    key                  = var.storage_resource_group_state_key
+  }
+}
+
+# MySQL remote state
+data "terraform_remote_state" "data_stores_mysql" {
+  backend = "azurerm"
+
+  config = {
+    resource_group_name  = var.storage_resource_group
+    storage_account_name = var.storage_account_name
+    container_name       = var.storage_container_name
+    key                  = var.storage_mysql_state_key
+  }
+}
+
+# Startup script template file
+data "template_file" "start_web_server" {
+  template = file("${path.module}/start_web_server.sh")
+
+  vars = {
+    mysql_fqdn = data.terraform_remote_state.data_stores_mysql.outputs.mysql_fqdn
+  }
 }
 
 locals {
   frontend_ip_configuration_name = "example-frontend-ip"
-}
-
-# Configure a resource group
-#
-# All Azure resources have to be part of a resource group.
-resource "azurerm_resource_group" "example" {
-  name     = "example-resource-group"
-  location = "UAE North"
 }
 
 # Configure a VM scale set
@@ -35,9 +55,9 @@ resource "azurerm_linux_virtual_machine_scale_set" "example" {
   admin_password                  = var.vm_password
   disable_password_authentication = false # Use password auth instead of SSH keys
   instances                       = 2 # Default number of instances
-  location                        = azurerm_resource_group.example.location
+  location                        = data.terraform_remote_state.resource_group.outputs.resource_group_location
   name                            = "example-linux-virtual-machine-scale-set"
-  resource_group_name             = azurerm_resource_group.example.name
+  resource_group_name             = data.terraform_remote_state.resource_group.outputs.resource_group_name
   sku                             = "Standard_B1ls" # Smallest VM for testing purposes
 
   network_interface {
@@ -68,7 +88,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "example" {
     version   = "latest"
   }
 
-  custom_data = filebase64("start_web_server.sh") # Base64 encoded startup script
+  custom_data = base64encode(data.template_file.start_web_server.rendered) # Base64 encoded startup script
 
   # For some reason this currently does not enable self-healing
   # Question: https://docs.microsoft.com/en-us/answers/questions/815029/cannot-enable-autorepair-for-vm-scale-set.html
@@ -89,7 +109,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "example" {
 # Configure a subnet
 resource "azurerm_subnet" "example" {
   name                 = "example-subnet"
-  resource_group_name  = azurerm_resource_group.example.name
+  resource_group_name  = data.terraform_remote_state.resource_group.outputs.resource_group_name
   virtual_network_name = azurerm_virtual_network.example.name
   address_prefixes     = ["10.0.0.0/24"] # Occupied part of the address space (10.0.0.0 - 10.0.0.255)
 }
@@ -97,16 +117,16 @@ resource "azurerm_subnet" "example" {
 # Configure a virtual network
 resource "azurerm_virtual_network" "example" {
   address_space       = ["10.0.0.0/16"] # Address spaces available for subnets (10.0.0.0 - 10.0.255.255)
-  location            = azurerm_resource_group.example.location
+  location            = data.terraform_remote_state.resource_group.outputs.resource_group_location
   name                = "example-virtual-network"
-  resource_group_name = azurerm_resource_group.example.name
+  resource_group_name = data.terraform_remote_state.resource_group.outputs.resource_group_name
 }
 
 # Configure a load balancer
 resource "azurerm_lb" "example" {
-  location            = azurerm_resource_group.example.location
+  location            = data.terraform_remote_state.resource_group.outputs.resource_group_location
   name                = "example-lb"
-  resource_group_name = azurerm_resource_group.example.name
+  resource_group_name = data.terraform_remote_state.resource_group.outputs.resource_group_name
 
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
@@ -117,9 +137,9 @@ resource "azurerm_lb" "example" {
 # Configure a public IP
 resource "azurerm_public_ip" "example" {
   allocation_method   = "Dynamic"
-  location            = azurerm_resource_group.example.location
+  location            = data.terraform_remote_state.resource_group.outputs.resource_group_location
   name                = "example-public-ip"
-  resource_group_name = azurerm_resource_group.example.name
+  resource_group_name = data.terraform_remote_state.resource_group.outputs.resource_group_name
 }
 
 # Configure a backend address pool
@@ -165,9 +185,9 @@ resource "azurerm_lb_probe" "example" {
 # can be used:
 # for n in {1..1000}; do curl http://<load balancer IP>; done
 resource "azurerm_monitor_autoscale_setting" "example" {
-  location            = azurerm_resource_group.example.location
+  location            = data.terraform_remote_state.resource_group.outputs.resource_group_location
   name                = "example-monitor-autoscale-setting"
-  resource_group_name = azurerm_resource_group.example.name
+  resource_group_name = data.terraform_remote_state.resource_group.outputs.resource_group_name
   target_resource_id  = azurerm_linux_virtual_machine_scale_set.example.id
 
   profile {
@@ -219,10 +239,4 @@ resource "azurerm_monitor_autoscale_setting" "example" {
       }
     }
   }
-}
-
-# Output variables printed to the console after apply
-output "lb_public_ip" {
-  description = "Public IP address of the load balancer"
-  value       = azurerm_public_ip.example.ip_address
 }
