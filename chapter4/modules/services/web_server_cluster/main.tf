@@ -42,11 +42,13 @@ data "template_file" "start_web_server" {
 
   vars = {
     mysql_fqdn = data.terraform_remote_state.data_stores_mysql.outputs.mysql_fqdn
+    port = local.backend_port
   }
 }
 
 locals {
   frontend_ip_configuration_name = "${var.environment}-example-frontend-ip"
+  backend_port = 8080
 }
 
 # Configure a VM scale set
@@ -154,7 +156,7 @@ resource "azurerm_lb_backend_address_pool" "example" {
 #
 # This rule tells which ports should be used on load balancer and VMs.
 resource "azurerm_lb_rule" "example" {
-  backend_port                   = 8080 # Port of application on the VM
+  backend_port                   = local.backend_port # Port of application on the VM
   frontend_ip_configuration_name = local.frontend_ip_configuration_name
   frontend_port                  = 80 # Port on which load balancer will receive requests
   loadbalancer_id                = azurerm_lb.example.id
@@ -173,7 +175,7 @@ resource "azurerm_lb_rule" "example" {
 resource "azurerm_lb_probe" "example" {
   loadbalancer_id = azurerm_lb.example.id
   name            = "${var.environment}-example-lb-probe"
-  port            = 8080
+  port            = local.backend_port
   protocol        = "Http"
   request_path    = "/"
 }
@@ -191,7 +193,7 @@ resource "azurerm_monitor_autoscale_setting" "example" {
   target_resource_id  = azurerm_linux_virtual_machine_scale_set.example.id
 
   profile {
-    name = "${var.environment}-default"
+    name = "default"
 
     capacity {
       default = 2
