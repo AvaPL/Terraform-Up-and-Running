@@ -7,7 +7,7 @@ locals {
 }
 
 module "web_server_cluster" {
-  source                           = "../../../modules/services/web_server_cluster"
+  source                           = "../../../../modules/services/web_server_cluster"
   environment                      = local.environment
   storage_resource_group           = "storage-resource-group"
   storage_account_name             = "example241574"
