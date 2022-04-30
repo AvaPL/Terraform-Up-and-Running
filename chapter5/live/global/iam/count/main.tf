@@ -21,6 +21,7 @@ resource "azurerm_resource_group" "example" {
   location = "UAE North"
 }
 
+# Create IAM user
 resource "azurerm_user_assigned_identity" "example" {
   count               = length(var.user_names) # Number of created resources
   location            = azurerm_resource_group.example.location
