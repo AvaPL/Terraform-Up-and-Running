@@ -79,13 +79,6 @@ resource "azurerm_linux_virtual_machine_scale_set" "example" {
 
   custom_data = base64encode(data.template_file.start_web_server.rendered) # Base64 encoded startup script
 
-  # For some reason this currently does not enable self-healing
-  # Question: https://docs.microsoft.com/en-us/answers/questions/815029/cannot-enable-autorepair-for-vm-scale-set.html
-  automatic_instance_repair {
-    enabled      = true
-    grace_period = "PT10M"
-  }
-
   health_probe_id = azurerm_lb_probe.example.id # Healthcheck used to determine if instance is healthy
 
   lifecycle {
@@ -114,6 +107,7 @@ resource "azurerm_lb" "example" {
   location            = azurerm_resource_group.example.location
   name                = "${var.environment}-example-lb"
   resource_group_name = azurerm_resource_group.example.name
+  sku                 = "Standard"
 
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
@@ -123,10 +117,11 @@ resource "azurerm_lb" "example" {
 
 # Configure a public IP
 resource "azurerm_public_ip" "example" {
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
   location            = azurerm_resource_group.example.location
   name                = "${var.environment}-example-public-ip"
   resource_group_name = azurerm_resource_group.example.name
+  sku                 = "Standard"
 }
 
 # Configure a backend address pool
