@@ -107,7 +107,7 @@ resource "azurerm_lb" "example" {
   location            = azurerm_resource_group.example.location
   name                = "${var.environment}-example-lb"
   resource_group_name = azurerm_resource_group.example.name
-  sku                 = "Standard"
+  sku                 = "Standard" # Required for create_before_destroy in scale set
 
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
@@ -117,11 +117,11 @@ resource "azurerm_lb" "example" {
 
 # Configure a public IP
 resource "azurerm_public_ip" "example" {
-  allocation_method   = "Static"
+  allocation_method   = "Static" # Required for Standard SKU load balancer
   location            = azurerm_resource_group.example.location
   name                = "${var.environment}-example-public-ip"
   resource_group_name = azurerm_resource_group.example.name
-  sku                 = "Standard"
+  sku                 = "Standard" # Required for Standard SKU load balancer
 }
 
 # Configure a backend address pool
